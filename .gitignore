@@ -1,0 +1,11 @@
+# local runtime state (never commit)
+state/
+.g2ray/
+*.pid
+
+# logs
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db

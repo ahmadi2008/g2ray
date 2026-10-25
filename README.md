@@ -1,27 +1,124 @@
-only works in places where you can open github codespaces
+<div dir="rtl" align="center">
 
-## setup
-1. fork the repo
-2. click the green "Code" button above, go to the "Codespaces" tab, and click "Create codespace on main."
+# g2ray v2
 
-## how to use
-- wait some minutes for the codespace. it needs some time to setup everything.
-- once it's ready, your vless link will be printed right there in terminal tab
-![terminal](./docs/screenshot.png)
+**پروکسی شخصی ساده و امن داخل GitHub Codespaces — نسخه بازنویسی‌شده**
 
-- copy the link into your v2rayng (or your fav proxy app)
+با فورک کردن این ریپو و ساخت یک Codespace، یک سرور VLESS کامل روی زیرساخت گیت‌هاب تحویل می‌گیرید؛ بدون سرور خارجی، بدون هزینه و بدون کانفیگ پیچیده.
 
-## notes
-- github gives you 120 free hours per cpu cores for a month
-- so if your codespace has 2 cores, the limit will be 60 hours per month
-- remember to stop the codespace when you aren't using it, to save your hours
+![License](https://img.shields.io/badge/license-MIT-green) ![Xray](https://img.shields.io/badge/Xray--core-v26.10.21-blue) ![Codespaces](https://img.shields.io/badge/platform-GitHub%20Codespaces-black)
 
-tested on shecan (free plan). so if you can see any of these ips, it'll work for you. if not, try other datacenters/ISPs:
-- 63.141.252.203
-- 50.7.5.83
-- 63.141.252.203
-- 94.130.50.12
+</div>
 
-## support the project
-- [buy me a coffee](https://www.buymeacoffee.com/amiremohamadi)
-- eth: `0x5724c38100b2aE3d2547974f46D0f2f49eb2D152`
+---
+
+<div dir="rtl">
+
+## چرا نسخه ۲؟
+
+نسخه اول g2ray ایده خوبی داشت، اما چند مشکل جدی باعث می‌شد «عملا» روی سرور گیت‌هاب درست کار نکند. نسخه ۲ از پایه بازنویسی شده و همه این مشکلات رفع شده‌اند:
+
+| مشکل در نسخه ۱ | راه‌حل در نسخه ۲ |
+|---|---|
+| UUID هاردکد شده بود و همه فورک‌ها **یک شناسه مشترک** داشتند | UUID برای هر Codespace به‌صورت تصادفی ساخته و ذخیره می‌شود (یا از secret به نام `G2RAY_UUID` خوانده می‌شود) |
+| آیپی هاردکد خارجی (`94.130.50.12`) داخل لینک اتصال | لینک اتصال به‌صورت پویا از متغیر `CODESPACE_NAME` ساخته می‌شود |
+| با هر باز شدن ترمینال یک instance جدید Xray اجرا می‌شد | سرور فقط یک‌بار در `postStartCommand` اجرا می‌شود؛ ترمینال‌های بعدی فقط لینک را نمایش می‌دهند |
+| مسیر (path) ثابت و عمومی `/` | مسیر مخفی تصادفی مثل `/g2-a1b2c3d4` برای هر Codespace |
+| هیچ ابزار مدیریت و عیب‌یابی وجود نداشت | دستور کامل مدیریت `g2ray` به‌همراه `doctor` برای تشخیص مشکل |
+| بدون محافظت شبکه داخلی | ترافیک سمت شبکه خصوصی (metadata و سرویس‌های داخلی) مسدود می‌شود |
+| نسخه قدیمی Xray | آخرین نسخه پایدار Xray-core (v26.10.21) |
+
+## چطور کار می‌کند؟
+
+گیت‌هاب به هر Codespace امکان port forwarding امن با گواهی TLS می‌دهد: هر پورتی که در Codespace باز شود، از طریق آدرس `https://<نام-codespace>-<پورت>.app.github.dev` در دسترس قرار می‌گیرد و گیت‌هاب خودش لایه TLS را در لبه (edge) شبکه مدیریت می‌کند.
+
+g2ray از همین قابلیت رسمی استفاده می‌کند: کانتینر دوانیکر (devcontainer) این ریپو، Xray-core را نصب می‌کند و یک سرور VLESS با ترنسپورت xhttp (حالت `packet-up`) روی پورت 443 بالا می‌آورد. لینک اتصال شما در واقع به لبه TLS گیت‌هاب وصل می‌شود و ترافیک از طریق فورواردینگ رسمی Codespaces به سرور Xray می‌رسد. هیچ چیزی خارج از قابلیت‌های استاندارد گیت‌هاب به کار گرفته نشده است.
+
+## شروع سریع
+
+1. این ریپو را **Fork** کنید (دکمه Fork بالای صفحه).
+2. در فورک خودتان روی دکمه **Code** بزنید و به تب **Codespaces** بروید.
+3. روی **Create codespace on main** کلیک کنید.
+4. ۲ تا ۳ دقیقه صبر کنید تا ایمیج ساخته و سرویس اجرا شود. وقتی آماده شد، لینک اتصال به این شکل در ترمینال ظاهر می‌شود:
+
+```
+==============================================
+  g2ray v2.0.0 — starting up
+==============================================
+[g2ray] started (pid 123), listening on :443
+[g2ray] port 443 is now public
+
+Connection string:
+vless://xxxxxxxx-...@fuzzy-palm-abc123-443.app.github.dev:443?encryption=none&security=tls&...
+```
+
+5. لینک را کپی کنید و در کلاینت خود import کنید. همین!
+
+> نکته: اگر ترمینال را بستید و لینک را نداشتید، در هر ترمینال جدید دستور `g2ray link` را بزنید یا `g2ray status` را اجرا کنید.
+
+## اتصال با v2rayNG (اندروید)
+
+1. آخرین نسخه **v2rayNG** را از [صفحه ریلیزهای گیت‌هاب پروژه](https://github.com/2dust/v2rayNG/releases) یا گوگل‌پلی نصب کنید. (برای پشتیبانی از xhttp به نسخه ۱.۹.۲۹ یا جدیدتر نیاز دارید.)
+2. لینک اتصال را از ترمینال Codespace کپی کنید.
+3. در v2rayNG روی آیکون **+** بالای صفحه بزنید و گزینه **Import config from clipboard** را انتخاب کنید.
+4. پروفایل جدید اضافه شده را انتخاب کنید و با زدن دکمه **V** (پایین وسط) وصل شوید.
+5. برای اطمینان از سلامت اتصال، در همان اپ تست پینگ (Test connection) بگیرید.
+
+اگر وصل نشد، بخش [عیب‌یابی](#عیبیابی) پایین همین صفحه را ببینید — شایع‌ترین علت، private ماندن پورت است که با یک دستور `g2ray start` برطرف می‌شود.
+
+## مدیریت سرور با دستور g2ray
+
+در ترمینال Codespace این دستورات در اختیار شماست:
+
+| دستور | کار |
+|---|---|
+| `g2ray status` | نمایش وضعیت کامل سرور + لینک اتصال |
+| `g2ray start` | اجرای سرور و public کردن پورت |
+| `g2ray stop` | توقف سرور |
+| `g2ray restart` | راه‌اندازی مجدد |
+| `g2ray link` | فقط چاپ لینک اتصال |
+| `g2ray log` | نمایش ۵۰ خط آخر لاگ (عدد دلخواه: `g2ray log 100`) |
+| `g2ray new-uuid` | تعویض UUID و چاپ لینک جدید |
+| `g2ray reset` | پاک‌کردن کامل state (UUID و مسیر جدید) |
+| `g2ray doctor` | بررسی سلامت همه اجزا (باینری، پورت، gh CLI، visibility و…) |
+
+## UUID دلخواه (اختیاری)
+
+اگر می‌خواهید UUID مشخص و ثابتی داشته باشید (مثلا بعد از rebuild تغییر نکند)، در فورک خودتان یک secret برای Codespaces بسازید:
+
+1. مسیر **Settings ← Secrets and variables ← Codespaces** را باز کنید.
+2. با دکمه **New codespace secret** یک secret به نام `G2RAY_UUID` بسازید و مقدارش را یک UUID معتبر بگذارید (مثلا خروجی دستور `cat /proc/sys/kernel/random/uuid`).
+3. Codespace را rebuild کنید یا دستور `g2ray restart` را بزنید.
+
+اگر این secret تعریف نشده باشد، UUID تصادفی برای همان Codespace ساخته و در `~/.g2ray/state.env` ذخیره می‌شود و بعد از restart یا rebuild هم تغییر نمی‌کند.
+
+## محدودیت‌ها و نکات مهم
+
+**سهمیه رایگان:** گیت‌هاب به حساب‌های شخصی ۱۲۰ core-hour در ماه می‌دهد. این کانفیگ ۲ هسته مصرف می‌کند، یعنی حدودا **۶۰ ساعت کارکرد در ماه**. بعد از استفاده، Codespace را حتما stop کنید (دکمه Code ← Codespaces ← سه‌نقطه ← Stop codespace).
+
+**توقف خودکار:** Codespace بعد از حدود ۳۰ دقیقه بی‌فعالیتی (نبودن تعامل با ادیتور/ترمینال) خودش متوقف می‌شود؛ صرف وصل‌بودن کاربران پروکسی جلوی توقف را نمی‌گیرد. اگر مدت طولانی‌تری لازم دارید، از **Settings ← Codespaces ← Default idle timeout** سقف را تا ۲۴۰ دقیقه افزایش دهید. با stop شدن Codespace، لینک اتصال هم قطع می‌شود و بعد از start دوباره، همان لینک قبلی (به لطف state ذخیره‌شده) برمی‌گردد.
+
+**محدودیت پهنای باند:** حساب‌های رایگان گیت‌هاب ۱۵ گیگابایت storage شامل Codespaces دارند و مصرف بالای شبکه ممکن است با سیاست‌های استفاده منصفانه گیت‌هاب تداخل داشته باشد؛ از این راه‌اندازی فقط برای مصرف شخصی و سبک استفاده کنید.
+
+**منطقه دیتاسنتر:** اگر اتصال از شبکه شما پایدار نیست، موقع ساخت Codespace می‌توانید **Region** دیگری انتخاب کنید (تنظیمات Codespaces در پروفایل گیت‌هاب).
+
+## عیب‌یابی
+
+| مشکل | علت احتمالی و راه‌حل |
+|---|---|
+| کلاینت وصل نمی‌شود ولی لینک درست است | پورت هنوز private است. در ترمینال بزنید `g2ray start` یا از پنل **PORTS** پایین VS Code، روی پورت 443 راست‌کلیک و **Port visibility ← Public** را بزنید |
+| خطای «g2ray: command not found» | ترمینال تازه باز کنید؛ اگر درست نشد Codespace را rebuild کنید (سه‌نقطه ← Rebuild container) |
+| سرور اجرا نمی‌شود | خروجی `g2ray doctor` و `g2ray log` را ببینید؛ در بیشتر موارد rebuild کردن کانتینر مشکل را حل می‌کند |
+| لینک بعد از مدتی کار نمی‌کند | Codespace به دلیل idle توقف شده است؛ دوباره start کنید و idle timeout را افزایش دهید |
+| بعد از rebuild لینک عوض شد | اگر UUID ثابت می‌خواهید، secret به نام `G2RAY_UUID` بسازید (بخش قبل) |
+| کلاینت خطای «unsupported network» می‌دهد | نسخه کلاینت قدیمی است؛ xhttp به v2rayNG نسخه ۱.۹.۲۹ به بالا نیاز دارد |
+
+## سلب مسئولیت
+
+این پروژه صرفا برای **آموزش و پژوهش** ساخته شده و از قابلیت رسمی و مستندشده Codespaces گیت‌هاب در مسیر عادی خودش استفاده می‌کند. مسئولیت نحوه استفاده و رعایت قوانین محلی و شرایط سرویس گیت‌هاب کاملا بر عهده کاربر است و توسعه‌دهنده هیچ مسئولیتی در برابر سوءاستفاده ندارد.
+
+## مجوز
+
+MIT — فایل [LICENSE](LICENSE) را ببینید.
+
+</div>
